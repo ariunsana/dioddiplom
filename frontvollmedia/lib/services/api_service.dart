@@ -85,4 +85,31 @@ class ApiService {
       throw Exception('Failed to load teams');
     }
   }
+
+  Future<List<dynamic>> fetchTeamStats() async {
+    final response = await http.get(Uri.parse('$baseUrl/teamstats/'));
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Failed to load team stats');
+    }
+  }
+
+  Future<List<dynamic>> fetchPlayers() async {
+    final response = await http.get(Uri.parse('$baseUrl/players/'));
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Failed to load players');
+    }
+  }
+
+  Future<List<dynamic>> fetchNews() async {
+    final response = await http.get(Uri.parse('$baseUrl/news/'));
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Failed to load news');
+    }
+  }
 }

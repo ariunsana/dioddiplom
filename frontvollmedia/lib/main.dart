@@ -3,6 +3,7 @@ import 'pages/standings_page.dart';
 import 'pages/game_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
+import 'services/api_service.dart';
 
 void main() {
   runApp(BasketMediaApp());
@@ -26,7 +27,42 @@ class BasketMediaApp extends StatelessWidget {
   }
 }
 
-class NewsPage extends StatelessWidget {
+class NewsPage extends StatefulWidget {
+  @override
+  _NewsPageState createState() => _NewsPageState();
+}
+
+class _NewsPageState extends State<NewsPage> {
+  final _apiService = ApiService();
+  List<dynamic> _news = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNews();
+  }
+
+  Future<void> _loadNews() async {
+    try {
+      final news = await _apiService.fetchNews();
+      setState(() {
+        _news = news;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Мэдээ ачаалахад алдаа гарлаа'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,26 +72,24 @@ class NewsPage extends StatelessWidget {
         backgroundColor: Colors.black,
         elevation: 0,
       ),
-      body: ListView(
-        padding: EdgeInsets.all(10),
-        children: [
-          NewsCard(
-            title: '“Монголын волейболын тамирчдын холбоо”-г Монголын волейболын холбооноос албан ёсоор батламжиллаа.',
-            imageUrl: 'assets/negah.jpg',
-            likes: 48,
-            comments: 30,
-            timeAgo: '2 өдрийн өмнө',
-          ),
-          SizedBox(height: 10),
-          NewsCard(
-            title: 'Эмгэнэл',
-            imageUrl: 'assets/negegch.jpg',
-            likes: 57,
-            comments: 24,
-            timeAgo: '2 өдрийн өмнө',
-          ),
-        ],
-      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              padding: EdgeInsets.all(10),
+              itemCount: _news.length,
+              itemBuilder: (context, index) {
+                final newsItem = _news[index];
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 10),
+                  child: NewsCard(
+                    title: newsItem['title'] ?? '',
+                    imageUrl: newsItem['image'] ?? 'assets/negah.jpg',
+                    content: newsItem['content'] ?? '',
+                    timeAgo: _formatDate(newsItem['created_at']),
+                  ),
+                );
+              },
+            ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         selectedItemColor: Colors.blue,
@@ -79,20 +113,35 @@ class NewsPage extends StatelessWidget {
       ),
     );
   }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return '';
+    final date = DateTime.parse(dateString);
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} өдрийн өмнө';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} цагийн өмнө';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} минутын өмнө';
+    } else {
+      return 'Сая';
+    }
+  }
 }
 
 class NewsCard extends StatelessWidget {
   final String title;
   final String imageUrl;
-  final int likes;
-  final int comments;
+  final String content;
   final String timeAgo;
 
   NewsCard({
     required this.title,
     required this.imageUrl,
-    required this.likes,
-    required this.comments,
+    required this.content,
     required this.timeAgo,
   });
 
@@ -106,8 +155,7 @@ class NewsCard extends StatelessWidget {
             builder: (context) => DetailPage(
               title: title,
               imageUrl: imageUrl,
-              likes: likes,
-              comments: comments,
+              content: content,
               timeAgo: timeAgo,
             ),
           ),
@@ -129,30 +177,19 @@ class NewsCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 height: 140,
                 width: 300,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 140,
+                    width: 300,
+                    color: Colors.grey[800],
+                    child: Icon(Icons.image_not_supported, color: Colors.white, size: 40),
+                  );
+                },
               ),
             ),
             Padding(
               padding: EdgeInsets.all(10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.favorite, color: Colors.red),
-                      SizedBox(width: 5),
-                      Text('$likes', style: TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.comment, color: Colors.orange),
-                      SizedBox(width: 5),
-                      Text('$comments', style: TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                  Text(timeAgo, style: TextStyle(color: Colors.grey)),
-                ],
-              ),
+              child: Text(timeAgo, style: TextStyle(color: Colors.grey)),
             )
           ],
         ),
@@ -164,15 +201,13 @@ class NewsCard extends StatelessWidget {
 class DetailPage extends StatelessWidget {
   final String title;
   final String imageUrl;
-  final int likes;
-  final int comments;
+  final String content;
   final String timeAgo;
 
   DetailPage({
     required this.title,
     required this.imageUrl,
-    required this.likes,
-    required this.comments,
+    required this.content,
     required this.timeAgo,
   });
 
@@ -195,6 +230,13 @@ class DetailPage extends StatelessWidget {
             fit: BoxFit.cover,
             height: 250,
             width: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                height: 250,
+                color: Colors.grey[900],
+                child: Icon(Icons.image_not_supported, color: Colors.white, size: 50),
+              );
+            },
           ),
           Padding(
             padding: EdgeInsets.all(16),
@@ -202,7 +244,7 @@ class DetailPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Жаргалсайханы Болортуяа\n(1978-2025)',
+                  title,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -210,66 +252,23 @@ class DetailPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.favorite, color: Colors.red),
-                        SizedBox(width: 5),
-                        Text('$likes', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Icon(Icons.comment, color: Colors.orange),
-                        SizedBox(width: 5),
-                        Text('$comments', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                    Text(timeAgo, style: TextStyle(color: Colors.grey)),
-                  ],
-                ),
-                SizedBox(height: 24),
-                ContentSection(
-                  text: 'Монголын Волейболын спортын бахархалт тамирчин, волейболын спортын Олон Улсын Хэмжээний Мастер Жаргалсайханы Болортуяа 2025 оны 3 дугаар сарын 21 -ний өдөр зуурдаар таалал төгсөж, Биеийн тамир, спортын салбарт нөхөж баршгүй хүнд гарз тохиолоо.',
-                ),
-                ContentSection(
-                  title: 'Спортын амжилтууд',
-                  text: 'Ж. Болортуяа нь 1992 оноос волейболын спортоор хичээллэж, 1998-2008 оны хугацаанд шигшээ багийн хамтаар Зүүн Азийн аварга шалгаруулах тэмцээний мөнгө, хүрэл медалиудыг хүртэж байсан түүхэн амжилтын эзэн билээ.',
-                ),
-                ContentSection(
-                  title: 'Багийн түүх',
-                  text: 'Тэрээр 1992-2010 онуудад "Эрдэм" цогцолбор, Бодь группийн Бодь баг, Говь ХХК-ны баг, Ноён группийн Ноён баг, ДЦС-4 ТӨХК-ны Эрчим багийн тамирчнаар тоглож Идэрчүүдийн УАШТ-ий 2 удаагийн аварга, Клубүүдийн аварга шалгаруулах тэмцээний 3 алт, 5 мөнгө, хүрэл, мөн Монголын волейболын Үндэсний дээд лигийн тэмцээний 6 Алт, 6 Мөнгө, 3 Хүрэл, Монголын Бүх ард түмний спартакиадаас алт, мөнгө хүрэл, Ахмад волейболын УАШТ-ий 5-н удаагийн аваргаар шалгарч байсан шилдэг тамирчин байлаа.',
-                ),
-                ContentSection(
-                  title: 'Шагнал урамшуулал',
-                  text: 'Төр засгаас түүний волейболын спортод оруулсан хувь нэмрийг өндрөөр үнэлж, 2018 онд Төрийн дээд шагнал Алтангадас одон 2012 онд Биеийн тамир спортын тэргүүний ажилтан 2013 онд МЗХ-ны Тэргүүний залуу алтан медаль 2016 онд Волейболын спортын ОУХМ, 2017 онд Эрчим хүчний яамны жуух бичиг, 2021 онд Эрчим хүчний салбарын тэргүүний ажилтан цол тэмдгээр тус тус шагнаж байсан.',
-                ),
-                ContentSection(
-                  text: 'Түүний эелдэг тусархаг зан, уран чадварлаг тоглолт, хичээнгүй тэмцэгч чанар, үе үеийн волейболчид, хөгжөөн дэмжигчид, Монголын Волейболын Холбооны нийт хамт олны сэтгэл зүрхэнд үүрд хоногшин үлдэх болно.',
+                Text(
+                  timeAgo,
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
                 ),
                 SizedBox(height: 24),
                 Text(
-                  'Талийгаачийн гэр бүл, үр хүүхэд, төрөл төрөгсдөд Волейболчдынхоо өмнөөс гүн эмгэнэл илэрхийлье.',
+                  content,
                   style: TextStyle(
                     fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[300],
+                    color: Colors.white,
+                    height: 1.5,
                   ),
                 ),
-                SizedBox(height: 16),
-                Center(
-                  child: Text(
-                    'УМ МА НИ БАД МЭ ХУМ',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[300],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
+                SizedBox(height: 24),
                 Center(
                   child: Text(
                     'МОНГОЛЫН ВОЛЕЙБОЛЫН ХОЛБОО',
@@ -279,31 +278,6 @@ class DetailPage extends StatelessWidget {
                       color: Colors.blue,
                     ),
                   ),
-                ),
-                SizedBox(height: 32),
-                Text(
-                  'Сэтгэгдэлүүд',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 16),
-                CommentItem(
-                  username: 'psddsadasdsaa',
-                  comment: 'Мэнххүслsdasdasdsэн sdasdsa',
-                  timeAgo: '0:14',
-                ),
-                CommentItem(
-                  username: 'Ган Эрдэнэ',
-                  comment: 'dasdasdsadsadsad',
-                  timeAgo: '0:15',
-                ),
-                CommentItem(
-                  username: 'Ichko Ichinnorow',
-                  comment: 'ooo',
-                  timeAgo: '0:16',
                 ),
               ],
             ),

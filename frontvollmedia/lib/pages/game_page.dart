@@ -105,21 +105,13 @@ class _MatchesPageState extends State<MatchesPage> {
       _selectedIndex = index;
     });
     if (index == 0) {
-      Navigator.pop(context);
+      Navigator.pushReplacementNamed(context, '/');
     } else if (index == 1) {
       // Already on MatchesPage
     } else if (index == 2) {
-      // Navigate to StandingsPage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => StandingsPage()),
-      );
+      Navigator.pushReplacementNamed(context, '/standings');
     } else if (index == 3) {
-      // Navigate to ProfilePage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ProfilePage()),
-      );
+      Navigator.pushReplacementNamed(context, '/profile');
     }
   }
 

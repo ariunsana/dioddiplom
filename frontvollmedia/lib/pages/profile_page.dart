@@ -158,34 +158,16 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Container(
             width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.blue.withOpacity(0.2),
-                  Colors.black,
-                ],
-              ),
-            ),
+            color: Colors.black,
             child: Column(
               children: [
                 SizedBox(height: 20),
                 Stack(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Colors.blue, Colors.purple],
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundImage: AssetImage('hasu.png'),
-                        backgroundColor: Colors.grey[800],
-                      ),
+                    CircleAvatar(
+                      radius: 60,
+                      backgroundImage: AssetImage('hasu.png'),
+                      backgroundColor: Colors.grey[800],
                     ),
                     Positioned(
                       bottom: 0,
@@ -230,62 +212,12 @@ class _ProfilePageState extends State<ProfilePage> {
             padding: EdgeInsets.all(20.0),
             child: Column(
               children: [
-                _buildStatCard(),
-                SizedBox(height: 20),
                 _buildMenuSection(),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatCard() {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem('Нийт тоглолт', '24'),
-          _buildStatItem('Хожсон', '18'),
-          _buildStatItem('Хожигдсон', '6'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[400],
-          ),
-        ),
-      ],
     );
   }
 
@@ -352,6 +284,29 @@ class _ProfilePageState extends State<ProfilePage> {
         trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
         onTap: onTap,
       ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[400],
+          ),
+        ),
+      ],
     );
   }
 }
