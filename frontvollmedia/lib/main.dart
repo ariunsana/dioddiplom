@@ -106,7 +106,7 @@ class _NewsPageState extends State<NewsPage> {
         },
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Мэдээ'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_basketball), label: 'Тоглолт'),
+          BottomNavigationBarItem(icon: Icon(Icons.sports_volleyball), label: 'Тоглолт'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Бусад'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Хэрэглэгч'),
         ],
@@ -268,17 +268,17 @@ class DetailPage extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-                SizedBox(height: 24),
-                Center(
-                  child: Text(
-                    'МОНГОЛЫН ВОЛЕЙБОЛЫН ХОЛБОО',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
+                // SizedBox(height: 24),
+                // Center(
+                //   child: Text(
+                //     'МОНГОЛЫН ВОЛЕЙБОЛЫН ХОЛБОО',
+                //     style: TextStyle(
+                //       fontSize: 16,
+                //       fontWeight: FontWeight.bold,
+                //       color: Colors.blue,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),

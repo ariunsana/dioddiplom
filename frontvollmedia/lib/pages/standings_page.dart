@@ -47,7 +47,7 @@ class StandingsPage extends StatelessWidget {
             },
             items: [
               BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Мэдээ'),
-              BottomNavigationBarItem(icon: Icon(Icons.sports_basketball), label: 'Тоглолт'),
+              BottomNavigationBarItem(icon: Icon(Icons.sports_volleyball), label: 'Тоглолт'),
               BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Бусад'),
               BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Хэрэглэгч'),
             ],

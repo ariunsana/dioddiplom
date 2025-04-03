@@ -96,7 +96,7 @@ class _ProfilePageState extends State<ProfilePage> {
             label: 'Мэдээ',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.sports_basketball),
+            icon: Icon(Icons.sports_volleyball),
             label: 'Тоглолт',
           ),
           BottomNavigationBarItem(

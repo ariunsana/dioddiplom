@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontvollmedia/pages/standings_page.dart';
 import 'package:frontvollmedia/pages/profile_page.dart';
 import 'package:frontvollmedia/pages/team_players_page.dart';
+import 'package:frontvollmedia/services/api_service.dart';
 
 void main() {
   runApp(VolleyballApp());
@@ -29,69 +30,48 @@ class MatchesPage extends StatefulWidget {
 class _MatchesPageState extends State<MatchesPage> {
   DateTime selectedDate = DateTime.now();
   int _selectedIndex = 1;
-  final List<Map<String, dynamic>> matches = [
-    {
-      'homeTeam': 'Хасу мегастарс',
-      'awayTeam': 'SG HAWKS',
-      'homeScore': 119,
-      'awayScore': 114,
-      'status': 'дууссан',
-      'homeImage': 'hasu.png',
-      'awayImage': 'sghawks.png',
-    },
-    {
-      'homeTeam': 'Улаанбаатар финикс',
-      'awayTeam': 'Ховд ижил алтайн торгууд',
-      'homeScore': 116,
-      'awayScore': 86,
-      'status': 'дууссан',
-      'homeImage': 'ubbin.png',
-      'awayImage': 'howd.png',
-    },
-  ];
+  final _apiService = ApiService();
+  List<dynamic> _games = [];
+  bool _isLoading = true;
 
-  final Map<String, List<Map<String, dynamic>>> teamPlayers = {
-    'hasu.png': [
-      {'number': '1', 'name': 'Болортуяа', 'position': 'Довтлогч', 'height': 185},
-      {'number': '2', 'name': 'Энхбаяр', 'position': 'Довтлогч', 'height': 190},
-      {'number': '3', 'name': 'Батбаяр', 'position': 'Довтлогч', 'height': 188},
-      {'number': '4', 'name': 'Ганбаяр', 'position': 'Довтлогч', 'height': 192},
-      {'number': '5', 'name': 'Болор', 'position': 'Довтлогч', 'height': 187},
-    ],
-    'sghawks.png': [
-      {'number': '1', 'name': 'Алтанцэцэг', 'position': 'Довтлогч', 'height': 183},
-      {'number': '2', 'name': 'Болормаа', 'position': 'Довтлогч', 'height': 186},
-      {'number': '3', 'name': 'Ганбаатар', 'position': 'Довтлогч', 'height': 189},
-      {'number': '4', 'name': 'Дорж', 'position': 'Довтлогч', 'height': 185},
-      {'number': '5', 'name': 'Энхбат', 'position': 'Довтлогч', 'height': 191},
-    ],
-    'ubbin.png': [
-      {'number': '1', 'name': 'Батбаяр', 'position': 'Довтлогч', 'height': 187},
-      {'number': '2', 'name': 'Ганбаатар', 'position': 'Довтлогч', 'height': 190},
-      {'number': '3', 'name': 'Дорж', 'position': 'Довтлогч', 'height': 185},
-      {'number': '4', 'name': 'Энхбат', 'position': 'Довтлогч', 'height': 191},
-      {'number': '5', 'name': 'Болор', 'position': 'Довтлогч', 'height': 188},
-    ],
-    'howd.png': [
-      {'number': '1', 'name': 'Алтанцэцэг', 'position': 'Довтлогч', 'height': 183},
-      {'number': '2', 'name': 'Болормаа', 'position': 'Довтлогч', 'height': 186},
-      {'number': '3', 'name': 'Ганбаатар', 'position': 'Довтлогч', 'height': 189},
-      {'number': '4', 'name': 'Дорж', 'position': 'Довтлогч', 'height': 185},
-      {'number': '5', 'name': 'Энхбат', 'position': 'Довтлогч', 'height': 191},
-    ],
-  };
+  @override
+  void initState() {
+    super.initState();
+    _loadGames();
+  }
 
-  final Map<String, String> teamNames = {
-    'hasu.png': 'Хасу мегастарс',
-    'sghawks.png': 'SG HAWKS',
-    'ubbin.png': 'Улаанбаатар финикс',
-    'howd.png': 'Ховд ижил алтайн торгууд',
-  };
+  Future<void> _loadGames() async {
+    try {
+      final games = await _apiService.fetchGames();
+      setState(() {
+        // Filter games for the selected date
+        _games = games.where((game) {
+          final gameDate = DateTime.parse(game['date']);
+          return gameDate.year == selectedDate.year &&
+                 gameDate.month == selectedDate.month &&
+                 gameDate.day == selectedDate.day;
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Тоглолтын мэдээлэл ачаалахад алдаа гарлаа'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   void _selectDate(DateTime date) {
     setState(() {
       selectedDate = date;
+      _isLoading = true;
     });
+    _loadGames(); // Reload games when date is selected
   }
 
   void _changeMonth(int offset) {
@@ -115,14 +95,14 @@ class _MatchesPageState extends State<MatchesPage> {
     }
   }
 
-  void _showTeamPlayers(String teamImage) {
+  void _showTeamPlayers(Map<String, dynamic> team) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => TeamPlayersPage(
-          teamName: teamNames[teamImage] ?? 'Баг',
-          teamImage: teamImage,
-          players: teamPlayers[teamImage] ?? [],
+          teamId: team['id'],
+          teamName: team['name'] ?? 'Баг',
+          teamLogo: team['photo'] ?? '',
         ),
       ),
     );
@@ -175,7 +155,7 @@ class _MatchesPageState extends State<MatchesPage> {
                 bottomRight: Radius.circular(20),
               ),
             ),
-            padding: EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: 12),
             child: Column(
               children: [
                 Row(
@@ -186,15 +166,15 @@ class _MatchesPageState extends State<MatchesPage> {
                       onPressed: () => _changeMonth(-1),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.blue.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${currentYear} оны ${currentMonth} сар',
+                        '${currentYear}',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
                         ),
@@ -206,200 +186,195 @@ class _MatchesPageState extends State<MatchesPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 8),
                 Container(
-                  height: 80,
-                  child: SingleChildScrollView(
+                  height: 60,
+                  child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: allDates.map((dateInfo) {
-                        final date = dateInfo['date'] as DateTime;
-                        final isCurrentMonth = dateInfo['isCurrentMonth'] as bool;
-                        final isPastMonth = dateInfo['isPastMonth'] as bool;
-                        final isSelected = date.day == selectedDate.day && 
-                                         date.month == selectedDate.month && 
-                                         date.year == selectedDate.year;
-                        
-                        final textColor = isSelected 
-                            ? Colors.black 
-                            : (isCurrentMonth 
-                                ? Colors.white 
-                                : (isPastMonth 
-                                    ? Colors.grey[400] 
-                                    : Colors.grey[600]));
-                        
-                        final backgroundColor = isSelected 
-                            ? Colors.blue 
-                            : (isCurrentMonth 
-                                ? Colors.grey[800] 
-                                : (isPastMonth 
-                                    ? Colors.grey[900] 
-                                    : Colors.grey[900]));
-
-                        return GestureDetector(
-                          onTap: () => _selectDate(date),
-                          child: Container(
-                            width: 60,
-                            margin: EdgeInsets.symmetric(horizontal: 4),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  ['Дав', 'Мяг', 'Лха', 'Пүр', 'Баа', 'Бям', 'Ням'][date.weekday - 1],
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: textColor,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: backgroundColor,
-                                    shape: BoxShape.circle,
-                                    boxShadow: isSelected ? [
-                                      BoxShadow(
-                                        color: Colors.blue.withOpacity(0.3),
-                                        blurRadius: 8,
-                                        spreadRadius: 2,
-                                      ),
-                                    ] : null,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      date.day.toString(),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: textColor,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: 14, // Show 14 days (7 days before and 7 days after today)
+                    itemBuilder: (context, index) {
+                      // Calculate date: 7 days before today + index
+                      final date = DateTime.now().subtract(Duration(days: 7)).add(Duration(days: index));
+                      final isSelected = date.year == selectedDate.year &&
+                                      date.month == selectedDate.month &&
+                                      date.day == selectedDate.day;
+                      
+                      return GestureDetector(
+                        onTap: () => _selectDate(date),
+                        child: Container(
+                          width: 50,
+                          margin: EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.blue : Colors.grey[800],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: isSelected ? [
+                              BoxShadow(
+                                color: Colors.blue.withOpacity(0.3),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ] : null,
                           ),
-                        );
-                      }).toList(),
-                    ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                ['Дав', 'Мяг', 'Лха', 'Пүр', 'Баа', 'Бям', 'Ням'][date.weekday - 1],
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected ? Colors.white : Colors.grey[400],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                '${date.month}/${date.day}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isSelected ? Colors.white : Colors.white,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              itemCount: matches.length,
-              itemBuilder: (context, index) {
-                final match = matches[index];
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                  color: Colors.grey[850],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              onTap: () => _showTeamPlayers(match['homeImage']),
-                              child: Container(
-                                padding: EdgeInsets.all(8),
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    itemCount: _games.length,
+                    itemBuilder: (context, index) {
+                      final game = _games[index];
+                      final homeTeam = game['team1'] ?? {};
+                      final awayTeam = game['team2'] ?? {};
+                      
+                      return Card(
+                        margin: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                        color: Colors.grey[850],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Container(
+                          padding: EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _showTeamPlayers(homeTeam),
+                                    child: Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[800],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Image.network(
+                                        homeTeam['photo'] ?? '',
+                                        height: 40,
+                                        width: 40,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(Icons.sports_basketball, color: Colors.white, size: 40);
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  GestureDetector(
+                                    onTap: () => _showTeamPlayers(awayTeam),
+                                    child: Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[800],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Image.network(
+                                        awayTeam['photo'] ?? '',
+                                        height: 40,
+                                        width: 40,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(Icons.sports_basketball, color: Colors.white, size: 40);
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    homeTeam['name'] ?? 'Unknown Team',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    awayTeam['name'] ?? 'Unknown Team',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    game['score_team1']?.toString() ?? '0',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    game['score_team2']?.toString() ?? '0',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[800],
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: Image.asset(match['homeImage'], height: 40, width: 40),
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () => _showTeamPlayers(match['awayImage']),
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[800],
-                                  borderRadius: BorderRadius.circular(12),
+                                child: Text(
+                                  'дууссан',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[300],
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                                child: Image.asset(match['awayImage'], height: 40, width: 40),
                               ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              match['homeTeam'],
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              match['awayTeam'],
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              match['homeScore'].toString(),
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              match['awayScore'].toString(),
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[800],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            match['status'],
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[300],
-                              fontWeight: FontWeight.w500,
-                            ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -416,7 +391,7 @@ class _MatchesPageState extends State<MatchesPage> {
             label: 'Мэдээ',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.sports_basketball),
+            icon: Icon(Icons.sports_volleyball),
             label: 'Тоглолт',
           ),
           BottomNavigationBarItem(

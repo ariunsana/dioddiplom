@@ -112,4 +112,13 @@ class ApiService {
       throw Exception('Failed to load news');
     }
   }
+
+  Future<List<dynamic>> fetchGames() async {
+    final response = await http.get(Uri.parse('$baseUrl/games/'));
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Failed to load games');
+    }
+  }
 }
