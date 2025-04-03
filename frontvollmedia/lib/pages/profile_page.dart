@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -7,6 +8,38 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   int _selectedIndex = 3;
+  bool _isLoggedIn = false;
+  String? _userEmail;
+  final _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final isLoggedIn = await _apiService.isLoggedIn();
+    final userEmail = await _apiService.getCurrentUserEmail();
+    setState(() {
+      _isLoggedIn = isLoggedIn;
+      _userEmail = userEmail;
+    });
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      await _apiService.logout();
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Гарах үед алдаа гарлаа'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -40,100 +73,16 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(Icons.edit, color: Colors.white),
-            onPressed: () {
-              // Edit profile action
-            },
-          ),
+          if (_isLoggedIn)
+            IconButton(
+              icon: Icon(Icons.edit, color: Colors.white),
+              onPressed: () {
+                // Edit profile action
+              },
+            ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.blue.withOpacity(0.2),
-                    Colors.black,
-                  ],
-                ),
-              ),
-              child: Column(
-                children: [
-                  SizedBox(height: 20),
-                  Stack(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Colors.blue, Colors.purple],
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundImage: AssetImage('hasu.png'),
-                          backgroundColor: Colors.grey[800],
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Ариунсанаа',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'ariunsanaa@example.com',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[400],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  _buildStatCard(),
-                  SizedBox(height: 20),
-                  _buildMenuSection(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      body: _isLoggedIn ? _buildLoggedInContent() : _buildLoggedOutContent(),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         selectedItemColor: Colors.blue,
@@ -157,6 +106,135 @@ class _ProfilePageState extends State<ProfilePage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Хэрэглэгч',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoggedOutContent() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.account_circle,
+            size: 100,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Та нэвтрээгүй байна',
+            style: TextStyle(
+              fontSize: 24,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/login');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Нэвтрэх',
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoggedInContent() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.blue.withOpacity(0.2),
+                  Colors.black,
+                ],
+              ),
+            ),
+            child: Column(
+              children: [
+                SizedBox(height: 20),
+                Stack(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Colors.blue, Colors.purple],
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: AssetImage('hasu.png'),
+                        backgroundColor: Colors.grey[800],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Text(
+                  _userEmail?.split('@')[0] ?? 'Хэрэглэгч',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  _userEmail ?? '',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                SizedBox(height: 20),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                _buildStatCard(),
+                SizedBox(height: 20),
+                _buildMenuSection(),
+              ],
+            ),
           ),
         ],
       ),
@@ -236,9 +314,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         SizedBox(height: 20),
         ElevatedButton.icon(
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, '/login');
-          },
+          onPressed: _handleLogout,
           icon: Icon(Icons.logout),
           label: Text('Гарах'),
           style: ElevatedButton.styleFrom(

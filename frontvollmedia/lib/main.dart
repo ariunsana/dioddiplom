@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pages/standings_page.dart';
 import 'pages/game_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/login_page.dart';
 
 void main() {
   runApp(BasketMediaApp());
@@ -19,6 +20,7 @@ class BasketMediaApp extends StatelessWidget {
         '/matches': (context) => MatchesPage(),
         '/standings': (context) => StandingsPage(),
         '/profile': (context) => ProfilePage(),
+        '/login': (context) => LoginPage(),
       },
     );
   }

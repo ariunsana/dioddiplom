@@ -1,15 +1,25 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
 
 class User(models.Model):
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128)  # Hashed password
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.username
 
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.password)
+
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    gender = models.CharField(max_length=10, choices=[('male', 'Male'), ('female', 'Female')])
     photo = models.ImageField(upload_to='team_photos/', blank=True, null=True)
 
     def __str__(self):
@@ -56,3 +66,12 @@ class PlayerStats(models.Model):
 
     def __str__(self):
         return f"{self.player.first_name} {self.player.last_name} stats in {self.game}"
+
+class News(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    image = models.ImageField(upload_to='news_images/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
