@@ -3,6 +3,10 @@ import 'package:frontvollmedia/pages/standings_page.dart';
 import 'package:frontvollmedia/pages/profile_page.dart';
 import 'package:frontvollmedia/pages/team_players_page.dart';
 import 'package:frontvollmedia/services/api_service.dart';
+import 'package:frontvollmedia/pages/settings_page.dart';
+import 'package:frontvollmedia/pages/notifications_page.dart';
+import 'package:frontvollmedia/pages/help_page.dart';
+import 'package:frontvollmedia/pages/version_page.dart';
 
 void main() {
   runApp(VolleyballApp());

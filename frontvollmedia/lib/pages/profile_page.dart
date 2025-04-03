@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'settings_page.dart';
+import 'notifications_page.dart';
+import 'help_page.dart';
+import 'version_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -227,22 +231,42 @@ class _ProfilePageState extends State<ProfilePage> {
         _buildMenuItem(
           icon: Icons.settings,
           title: 'Тохиргоо',
-          onTap: () => Navigator.pushNamed(context, '/settings'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SettingsPage()),
+            );
+          },
         ),
         _buildMenuItem(
           icon: Icons.notifications,
           title: 'Мэдэгдэл',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationsPage()),
+            );
+          },
         ),
         _buildMenuItem(
           icon: Icons.help,
           title: 'Тусламж',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => HelpPage()),
+            );
+          },
         ),
         _buildMenuItem(
           icon: Icons.info,
           title: 'Хувилбар',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => VersionPage()),
+            );
+          },
         ),
         SizedBox(height: 20),
         ElevatedButton.icon(
