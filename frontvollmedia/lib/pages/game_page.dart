@@ -365,7 +365,7 @@ class _MatchesPageState extends State<MatchesPage> {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  'дууссан',
+                                  game['is_finished'] ? 'дууссан' : '${game['start_time']}',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey[300],
