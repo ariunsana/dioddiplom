@@ -80,7 +80,7 @@ class ApiService {
   Future<List<dynamic>> fetchTeams() async {
     final response = await http.get(Uri.parse('$baseUrl/teams/'));
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      return json.decode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Failed to load teams');
     }

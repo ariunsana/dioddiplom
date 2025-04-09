@@ -77,6 +77,10 @@ class TeamStatsViewSet(viewsets.ModelViewSet):
     queryset = TeamStats.objects.all()
     serializer_class = TeamStatsSerializer
 
+    def list(self, request, *args, **kwargs):
+        print(f"Total team stats in database: {self.queryset.count()}")
+        return super().list(request, *args, **kwargs)
+
 class PlayerViewSet(viewsets.ModelViewSet):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer

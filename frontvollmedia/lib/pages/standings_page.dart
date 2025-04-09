@@ -81,18 +81,45 @@ class _StandingsTabState extends State<StandingsTab> {
       final teams = await _apiService.fetchTeams();
       final teamStats = await _apiService.fetchTeamStats();
       
+      print('Fetched teams: ${teams.length}');
+      print('Fetched team stats: ${teamStats.length}');
+      
+      // Create default stats for teams that don't have stats
+      final Map<String, dynamic> teamStatsMap = {};
+      for (var stat in teamStats) {
+        teamStatsMap[stat['team']['id'].toString()] = stat;
+      }
+
+      final List<dynamic> allTeamStats = teams.map((team) {
+        final teamId = team['id'].toString();
+        if (teamStatsMap.containsKey(teamId)) {
+          return teamStatsMap[teamId];
+        } else {
+          // Create default stats for teams without stats
+          return {
+            'team': team,
+            'wins': 0,
+            'losses': 0,
+          };
+        }
+      }).toList();
+      
       setState(() {
-        _maleTeams = teamStats.where((stat) => stat['team']['gender'] == 'male').toList();
-        _femaleTeams = teamStats.where((stat) => stat['team']['gender'] == 'female').toList();
+        _maleTeams = allTeamStats.where((stat) => stat['team']['gender'] == 'male').toList();
+        _femaleTeams = allTeamStats.where((stat) => stat['team']['gender'] == 'female').toList();
         _isLoading = false;
       });
+      
+      print('Male teams: ${_maleTeams.length}');
+      print('Female teams: ${_femaleTeams.length}');
     } catch (e) {
+      print('Error loading team stats: $e');
       setState(() {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Өгөгдөл ачаалахад алдаа гарлаа'),
+          content: Text('Өгөгдөл ачаалахад алдаа гарлаа: $e'),
           backgroundColor: Colors.red,
         ),
       );
