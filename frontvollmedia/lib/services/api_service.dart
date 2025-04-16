@@ -121,4 +121,13 @@ class ApiService {
       throw Exception('Failed to load games');
     }
   }
+
+  Future<List<dynamic>> fetchPlayerSeasonStats() async {
+    final response = await http.get(Uri.parse('$baseUrl/playerseasonstats/'));
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Failed to load player season stats');
+    }
+  }
 }

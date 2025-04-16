@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
-from .views import UserViewSet, TeamViewSet, TeamStatsViewSet, PlayerViewSet, GameViewSet, PlayerStatsViewSet, register_user, login_user, NewsViewSet
+from .views import UserViewSet, TeamViewSet, TeamStatsViewSet, PlayerViewSet, GameViewSet, PlayerStatsViewSet, register_user, login_user, NewsViewSet, PlayerSeasonStatsViewSet
 
 router = DefaultRouter()
 router.register('users', UserViewSet)
@@ -11,6 +11,7 @@ router.register('players', PlayerViewSet)
 router.register('games', GameViewSet)
 router.register('playerstats', PlayerStatsViewSet)
 router.register('news', NewsViewSet)
+router.register('playerseasonstats', PlayerSeasonStatsViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('register/', register_user, name='register'),

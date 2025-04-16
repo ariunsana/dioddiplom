@@ -3,8 +3,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.hashers import make_password, check_password
-from .models import User, Team, TeamStats, Player, Game, PlayerStats, News
-from .serializers import UserSerializer, TeamSerializer, TeamStatsSerializer, PlayerSerializer, GameSerializer, PlayerStatsSerializer, NewsSerializer
+from .models import User, Team, TeamStats, Player, Game, PlayerStats, News, PlayerSeasonStats
+from .serializers import UserSerializer, TeamSerializer, TeamStatsSerializer, PlayerSerializer, GameSerializer, PlayerStatsSerializer, NewsSerializer, PlayerSeasonStatsSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -96,3 +96,7 @@ class PlayerStatsViewSet(viewsets.ModelViewSet):
 class NewsViewSet(viewsets.ModelViewSet):
     queryset = News.objects.all().order_by('-created_at')
     serializer_class = NewsSerializer
+
+class PlayerSeasonStatsViewSet(viewsets.ModelViewSet):
+    queryset = PlayerSeasonStats.objects.all()
+    serializer_class = PlayerSeasonStatsSerializer

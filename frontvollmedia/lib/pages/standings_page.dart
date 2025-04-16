@@ -7,7 +7,7 @@ class StandingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 1,
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.black,
@@ -15,6 +15,7 @@ class StandingsPage extends StatelessWidget {
           bottom: TabBar(
             tabs: [
               Tab(text: 'Хүснэгт'),
+              Tab(text: 'Тоглогчдын үзүүлэлт'),
             ],
             indicatorColor: Colors.purple,
           ),
@@ -22,6 +23,7 @@ class StandingsPage extends StatelessWidget {
         body: TabBarView(
           children: [
             StandingsTab(),
+            PlayerStatsTab(),
           ],
         ),
         bottomNavigationBar: Theme(
@@ -279,6 +281,230 @@ class TeamStandingRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class PlayerStatsTab extends StatefulWidget {
+  @override
+  _PlayerStatsTabState createState() => _PlayerStatsTabState();
+}
+
+class _PlayerStatsTabState extends State<PlayerStatsTab> {
+  bool isMaleSelected = true;
+  final _apiService = ApiService();
+  List<dynamic> _playerStats = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlayerStats();
+  }
+
+  Future<void> _loadPlayerStats() async {
+    try {
+      final stats = await _apiService.fetchPlayerSeasonStats();
+      setState(() {
+        _playerStats = stats;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading player stats: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Өгөгдөл ачаалахад алдаа гарлаа: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: Colors.black,
+          padding: EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    isMaleSelected = true;
+                  });
+                },
+                child: Text(
+                  'ЭРЭГТЭЙ',
+                  style: TextStyle(
+                    color: isMaleSelected ? Colors.blue : Colors.white,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    isMaleSelected = false;
+                  });
+                },
+                child: Text(
+                  'ЭМЭГТЭЙ',
+                  style: TextStyle(
+                    color: !isMaleSelected ? Colors.blue : Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  itemCount: _playerStats.length,
+                  itemBuilder: (context, index) {
+                    final stat = _playerStats[index];
+                    final player = stat['player'];
+                    if (player['team']['gender'] != (isMaleSelected ? 'male' : 'female')) {
+                      return SizedBox.shrink();
+                    }
+                    return PlayerStatsRow(
+                      playerName: '${player['first_name']} ${player['last_name']}',
+                      teamName: player['team']['name'],
+                      gamesPlayed: stat['games_played'].toString(),
+                      avgPoints: stat['average_points'].toStringAsFixed(1),
+                      avgAssists: stat['average_assists'].toStringAsFixed(1),
+                      avgBlocks: stat['average_blocks'].toStringAsFixed(1),
+                      avgAces: stat['average_aces'].toStringAsFixed(1),
+                      playerPhoto: player['photo'] ?? 'default_player.png',
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class PlayerStatsRow extends StatelessWidget {
+  final String playerName;
+  final String teamName;
+  final String gamesPlayed;
+  final String avgPoints;
+  final String avgAssists;
+  final String avgBlocks;
+  final String avgAces;
+  final String playerPhoto;
+
+  PlayerStatsRow({
+    required this.playerName,
+    required this.teamName,
+    required this.gamesPlayed,
+    required this.avgPoints,
+    required this.avgAssists,
+    required this.avgBlocks,
+    required this.avgAces,
+    required this.playerPhoto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade800, width: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: playerPhoto.startsWith('http')
+                      ? Image.network(
+                          playerPhoto,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.person, color: Colors.white, size: 20),
+                            );
+                          },
+                        )
+                      : Image.asset(
+                          playerPhoto,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.person, color: Colors.white, size: 20),
+                            );
+                          },
+                        ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      playerName,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      teamName,
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStatColumn('Тоглолт', gamesPlayed),
+              _buildStatColumn('Оноо', avgPoints),
+              _buildStatColumn('Дамжуулалт', avgAssists),
+              _buildStatColumn('Блок', avgBlocks),
+              _buildStatColumn('Эйс', avgAces),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }

@@ -78,3 +78,20 @@ class News(models.Model):
 
     def __str__(self):
         return self.title
+
+class PlayerSeasonStats(models.Model):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    season = models.CharField(max_length=10)  # e.g., "2023-2024"
+    games_played = models.IntegerField(default=0)
+    average_points = models.FloatField(default=0)
+    average_assists = models.FloatField(default=0)
+    average_blocks = models.FloatField(default=0)
+    average_aces = models.FloatField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['player', 'season']
+
+    def __str__(self):
+        return f"{self.player} - {self.season} Season Stats"

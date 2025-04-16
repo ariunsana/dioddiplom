@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Team, TeamStats, Player, Game, PlayerStats, News
+from .models import User, Team, TeamStats, Player, Game, PlayerStats, News, PlayerSeasonStats
 from django.contrib.auth.hashers import make_password
 
 class UserSerializer(serializers.ModelSerializer):
@@ -64,3 +64,11 @@ class NewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = News
         fields = '__all__'
+
+class PlayerSeasonStatsSerializer(serializers.ModelSerializer):
+    player = PlayerSerializer()
+
+    class Meta:
+        model = PlayerSeasonStats
+        fields = ['id', 'player', 'season', 'games_played', 'average_points', 
+                 'average_assists', 'average_blocks', 'average_aces']
