@@ -4,6 +4,7 @@ import 'settings_page.dart';
 import 'notifications_page.dart';
 import 'help_page.dart';
 import 'version_page.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class _ProfilePageState extends State<ProfilePage> {
   int _selectedIndex = 3;
   bool _isLoggedIn = false;
   String? _userEmail;
+  String? _photoUrl;
   final _apiService = ApiService();
 
   @override
@@ -25,6 +27,16 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _checkLoginStatus() async {
     final isLoggedIn = await _apiService.isLoggedIn();
     final userEmail = await _apiService.getCurrentUserEmail();
+    if (isLoggedIn) {
+      try {
+        final userData = await _apiService.getCurrentUser();
+        setState(() {
+          _photoUrl = userData['photo'];
+        });
+      } catch (e) {
+        print('Error loading user photo: $e');
+      }
+    }
     setState(() {
       _isLoggedIn = isLoggedIn;
       _userEmail = userEmail;
@@ -81,7 +93,10 @@ class _ProfilePageState extends State<ProfilePage> {
             IconButton(
               icon: Icon(Icons.edit, color: Colors.white),
               onPressed: () {
-                // Edit profile action
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => EditProfilePage()),
+                );
               },
             ),
         ],
@@ -170,7 +185,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundImage: AssetImage('hasu.png'),
+                      backgroundImage: _photoUrl != null
+                          ? NetworkImage(_photoUrl!)
+                          : null,
                       backgroundColor: Colors.grey[800],
                     ),
                     Positioned(

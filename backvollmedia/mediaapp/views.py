@@ -57,6 +57,14 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def get_queryset(self):
+        if self.action == 'update':
+            # For update, only return the current user
+            email = self.request.data.get('email')
+            if email:
+                return User.objects.filter(email=email)
+        return super().get_queryset()
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -65,9 +73,39 @@ class UserViewSet(viewsets.ModelViewSet):
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
+                'photo': user.photo.url if user.photo else None,
                 'message': 'User created successfully'
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            # Get user by email
+            email = request.data.get('email')
+            if not email:
+                return Response({'detail': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = User.objects.get(email=email)
+            
+            # Handle file upload
+            if 'photo' in request.FILES:
+                request.data['photo'] = request.FILES['photo']
+            
+            serializer = self.get_serializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_user = serializer.save()
+                return Response({
+                    'id': updated_user.id,
+                    'username': updated_user.username,
+                    'email': updated_user.email,
+                    'photo': updated_user.photo.url if updated_user.photo else None,
+                    'message': 'User updated successfully'
+                })
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()

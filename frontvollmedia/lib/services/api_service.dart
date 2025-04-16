@@ -1,9 +1,42 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ApiService {
   final String baseUrl = 'http://127.0.0.1:8000/api';
+
+  Future<Map<String, dynamic>> getCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentEmail = prefs.getString('user_email');
+    
+    if (currentEmail == null) {
+      throw Exception('User not logged in');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> users = json.decode(utf8.decode(response.bodyBytes));
+      final user = users.firstWhere(
+        (user) => user['email'] == currentEmail,
+        orElse: () => null,
+      );
+      
+      if (user != null) {
+        return user;
+      }
+      throw Exception('User not found');
+    } else {
+      throw Exception('Failed to load user data');
+    }
+  }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
@@ -128,6 +161,82 @@ class ApiService {
       return json.decode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Failed to load player season stats');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    required String email,
+    String? username,
+    dynamic photo,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentEmail = prefs.getString('user_email');
+    
+    if (currentEmail == null) {
+      throw Exception('User not logged in');
+    }
+
+    final uri = Uri.parse('$baseUrl/users/update/');
+    final request = http.MultipartRequest('PUT', uri);
+
+    // Add email
+    request.fields['email'] = email;
+
+    // Add username if provided
+    if (username != null) {
+      request.fields['username'] = username;
+    }
+
+    // Add photo if provided
+    if (photo != null) {
+      if (kIsWeb) {
+        // For web, use XFile
+        final XFile xFile = photo as XFile;
+        final bytes = await xFile.readAsBytes();
+        final multipartFile = http.MultipartFile.fromBytes(
+          'photo',
+          bytes,
+          filename: xFile.name,
+          contentType: MediaType('image', 'jpeg'),
+        );
+        request.files.add(multipartFile);
+      } else {
+        // For mobile, use File
+        final File file = photo as File;
+        final stream = http.ByteStream(file.openRead());
+        final length = await file.length();
+        final multipartFile = http.MultipartFile(
+          'photo',
+          stream,
+          length,
+          filename: file.path.split('/').last,
+          contentType: MediaType('image', 'jpeg'),
+        );
+        request.files.add(multipartFile);
+      }
+    }
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Update stored email if it changed
+        if (email != currentEmail) {
+          await prefs.setString('user_email', email);
+        }
+        // Update stored username if it changed
+        if (username != null) {
+          await prefs.setString('username', username);
+        }
+        return data;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['detail'] ?? 'Failed to update profile');
+      }
+    } catch (e) {
+      throw Exception('Failed to update profile: $e');
     }
   }
 }
