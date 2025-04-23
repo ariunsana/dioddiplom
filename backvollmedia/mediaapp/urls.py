@@ -22,5 +22,5 @@ urlpatterns = [
     path('login/', login_user, name='login'),
     path('token/', obtain_auth_token, name='token'),
     # Add custom URL pattern for updating user by email
-    path('users/update/', UserViewSet.as_view({'put': 'update'}), name='user-update'),
+    path('users/update/', UserViewSet.as_view({'post': 'update', 'put': 'update'}), name='user-update'),
 ]

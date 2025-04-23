@@ -3,7 +3,7 @@ from .models import User, Team, TeamStats, Player, Game, PlayerStats, News, Play
 from django.contrib.auth.hashers import make_password
 
 class UserSerializer(serializers.ModelSerializer):
-    photo = serializers.ImageField(required=False, allow_null=True)
+    photo = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -12,6 +12,14 @@ class UserSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}
         }
 
+    def get_photo(self, obj):
+        if obj.photo:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
+
     def create(self, validated_data):
         # Hash the password before saving
         if 'password' in validated_data:
@@ -19,10 +27,19 @@ class UserSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        # Handle password update separately
-        if 'password' in validated_data:
-            validated_data['password'] = make_password(validated_data['password'])
-        return super().update(instance, validated_data)
+        # Handle photo update
+        if 'photo' in validated_data:
+            if instance.photo:
+                # Delete old photo
+                instance.photo.delete(save=False)
+            instance.photo = validated_data.pop('photo')
+        
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
 
     def validate_email(self, value):
         if self.instance and self.instance.email == value:
